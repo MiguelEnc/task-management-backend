@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private logger = new Logger('JwtValidator');
+
   constructor(
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
@@ -25,6 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user: User = await this.usersRepository.findOneBy({ username });
 
     if (!user) {
+      this.logger.error(`Error validating user: ${username}. User not found.`);
       throw new UnauthorizedException();
     }
 
