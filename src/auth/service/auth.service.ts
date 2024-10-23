@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersRepository } from '../repository/users.repository';
@@ -13,6 +14,8 @@ import { JwtPayload } from '../interface/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger('AuthService');
+
   constructor(
     @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
@@ -25,8 +28,10 @@ export class AuthService {
     } catch (error) {
       // Record duplication error code
       if (error.code === '23505') {
+        this.logger.error(`SignUp error. Username "${authCredentialsDto.username}" already exists.`)
         throw new ConflictException('Username already exists');
       } else {
+        this.logger.error(`SignUp error for username "${authCredentialsDto.username}".`, error?.stack);
         throw new InternalServerErrorException();
       }
     }
@@ -41,10 +46,12 @@ export class AuthService {
     const matchesPassword = await bcrypt.compare(password, user.password);
 
     if (user && matchesPassword) {
+      this.logger.log(`User ${username} signed in succesfully`);
       const payload: JwtPayload = { username };
       const accessToken = this.jwtService.sign(payload);
       return { accessToken };
     } else {
+      this.logger.warn(`Sign In attempt error for user ${username}.`);
       throw new UnauthorizedException('Please check your login credentials');
     }
   }
