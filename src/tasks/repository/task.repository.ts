@@ -52,11 +52,10 @@ export class TaskRepository extends Repository<Task> {
 
     try {
       await this.save(task);
+      return task;
     } catch (error) {
-      this.logger.error(`Failed to create task for user ${user.username}`, error?.stack);
+      this.logger.error(`Failed to create task for user ${user?.username}`, error?.stack);
       throw new InternalServerErrorException();
     }
-
-    return task;
   }
 }
